@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+    "strconv"
 	"text/template"
 
-	"github.com/emedvedev/enigma"
+	"github.com/becgabri/enigma"
 	"github.com/mkideal/cli"
 )
 
@@ -17,10 +18,10 @@ type CLIOpts struct {
 	Help      bool `cli:"!h,help" usage:"Show help."`
 	Condensed bool `cli:"c,condensed" name:"false" usage:"Output the result without additional information."`
 
-	Rotors    []string `cli:"rotors" name:"I II III" usage:"Rotor configuration. Supported: I, II, III, IV, V, VI, VII, VIII, Beta, Gamma."`
-	Rings     []int    `cli:"rings" name:"1 1 1" usage:"Rotor rings offset: from 1 (default) to 26 for each rotor."`
-	Position  []string `cli:"position" name:"A A A" usage:"Starting position of the rotors: from A (default) to Z for each."`
-	Plugboard []string `cli:"plugboard" name:"[]" usage:"Optional plugboard pairs to scramble the message further."`
+	Rotors    string `cli:"rotors" name:"\"I II III\"" usage:"Rotor configuration. Supported: I, II, III, IV, V, VI, VII, VIII, Beta, Gamma."`
+	Rings     string    `cli:"rings" name:"\"1 1 1\"" usage:"Rotor rings offset: from 1 (default) to 26 for each rotor."`
+	Position  string `cli:"position" name:"\"A A A\"" usage:"Starting position of the rotors: from A (default) to Z for each."`
+	Plugboard string `cli:"plugboard" name:"\"AB CD\"" usage:"Optional plugboard pairs to scramble the message further."`
 
 	Reflector string `cli:"reflector" name:"C" usage:"Reflector. Supported: A, B, C, B-Thin, C-Thin."`
 }
@@ -31,14 +32,14 @@ type CLIOpts struct {
 // rotors if not set explicitly, so only one value is stored.
 var CLIDefaults = struct {
 	Reflector string
-	Ring      int
+	Ring      string
 	Position  string
-	Rotors    []string
+	Rotors    string
 }{
 	Reflector: "B",
-	Ring:      1,
-	Position:  "A",
-	Rotors:    []string{"I", "II", "III"},
+	Ring:      "1 1 1",
+	Position:  "A A A",
+	Rotors:    "I II III",
 }
 
 // SetDefaults sets values for all Enigma parameters that
@@ -55,15 +56,12 @@ func SetDefaults(argv *CLIOpts) {
 	}
 	loadRings := (len(argv.Rings) == 0)
 	loadPosition := (len(argv.Position) == 0)
-	if loadRings || loadPosition {
-		for range argv.Rotors {
-			if loadRings {
-				argv.Rings = append(argv.Rings, CLIDefaults.Ring)
-			}
-			if loadPosition {
-				argv.Position = append(argv.Position, CLIDefaults.Position)
-			}
-		}
+	if loadRings {
+        argv.Rings = CLIDefaults.Ring
+    }
+    if loadPosition {
+		argv.Position = CLIDefaults.Position
+
 	}
 }
 
@@ -82,14 +80,23 @@ func main() {
 			return nil
 		}
 
-		config := make([]enigma.RotorConfig, len(argv.Rotors))
-		for index, rotor := range argv.Rotors {
-			ring := argv.Rings[index]
-			value := argv.Position[index][0]
+        rotor_array := strings.Split(argv.Rotors, " ")
+        var ring_array []int = make([]int, len(strings.Split(argv.Rings, " ")))
+
+        pos_array := strings.Split(argv.Position, " ")
+        for idx, val := range strings.Split(argv.Rings, " ") {
+            ring_array[idx],_ = strconv.Atoi(val)
+        }
+
+		config := make([]enigma.RotorConfig, len(rotor_array))
+		for index, rotor := range rotor_array {
+			ring := ring_array[index]
+			value := pos_array[index][0]
 			config[index] = enigma.RotorConfig{ID: rotor, Start: value, Ring: ring}
 		}
 
-		e := enigma.NewEnigma(config, argv.Reflector, argv.Plugboard)
+        plugboards := strings.Split(argv.Plugboard, " ")
+		e := enigma.NewEnigma(config, argv.Reflector, plugboards)
 		encoded := e.EncodeString(plaintext)
 
 		if argv.Condensed {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/emedvedev/enigma"
+    "strconv"
+	"github.com/becgabri/enigma"
 	"github.com/mkideal/cli"
 )
 
@@ -35,7 +35,8 @@ func (argv *CLIOpts) Validate(ctx *cli.Context) error {
 // and letters in pairs do not repeat.
 func ValidatePlugboard(argv *CLIOpts, ctx *cli.Context) error {
 	var plugboard string
-	for _, pair := range argv.Plugboard {
+    effectivePlugboard := strings.Split(argv.Plugboard, " ")
+	for _, pair := range effectivePlugboard {
 		if matched, _ := regexp.MatchString(`^[A-Z]{2}$`, pair); !matched {
 			return fmt.Errorf(
 				`plugboard should be grouped by letter pairs ("AB CD"), got "%s"`,
@@ -54,7 +55,7 @@ func ValidatePlugboard(argv *CLIOpts, ctx *cli.Context) error {
 // ValidateRotors checks that the requested rotors are present
 // in the pre-defined list.
 func ValidateRotors(argv *CLIOpts, ctx *cli.Context) error {
-	for _, rotor := range argv.Rotors {
+	for _, rotor := range strings.Split(argv.Rotors, " ") {
 		if r := enigma.HistoricRotors.GetByID(rotor); r == nil {
 			return fmt.Errorf(`unknown rotor "%s"`, ctx.Color().Yellow(rotor))
 		}
@@ -74,7 +75,7 @@ func ValidateReflector(argv *CLIOpts, ctx *cli.Context) error {
 // ValidatePosition checks that the rotor positions are in the right
 // range and format.
 func ValidatePosition(argv *CLIOpts, ctx *cli.Context) error {
-	for _, char := range argv.Position {
+	for _, char := range strings.Split(argv.Position, " ") {
 		if matched, _ := regexp.MatchString(`^[A-Z]$`, char); !matched {
 			return fmt.Errorf(
 				`rotor positions should be single letters in the A-Z range, got "%s"`,
@@ -87,8 +88,9 @@ func ValidatePosition(argv *CLIOpts, ctx *cli.Context) error {
 // ValidateRings checks that the rotor rings are in the right
 // range and format.
 func ValidateRings(argv *CLIOpts, ctx *cli.Context) error {
-	for _, ring := range argv.Rings {
-		if ring < 1 || ring > 26 {
+	for _, ring := range strings.Split(argv.Rings, " ") {
+        ring_val, _ := strconv.Atoi(ring)
+		if ring_val < 1 || ring_val > 26 {
 			return fmt.Errorf(
 				`ring out of range: must be 1-26, got "%s"`,
 				ctx.Color().Yellow(ring))
@@ -100,7 +102,7 @@ func ValidateRings(argv *CLIOpts, ctx *cli.Context) error {
 // ValidateUniformity checks that the number of rotors, positions,
 // and rings is equal.
 func ValidateUniformity(argv *CLIOpts, ctx *cli.Context) error {
-	if !(len(argv.Rotors) == len(argv.Position) && len(argv.Position) == len(argv.Rings)) {
+	if !(len(strings.Split(argv.Rotors, " ")) == len(strings.Split(argv.Position, " ")) && len(strings.Split(argv.Position, " ")) == len(strings.Split(argv.Rings, " "))) {
 		return fmt.Errorf(
 			"number of configured rotors, rings, and position settings should be equal")
 	}
