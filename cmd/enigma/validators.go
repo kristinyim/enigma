@@ -37,11 +37,11 @@ func ValidatePlugboard(argv *CLIOpts, ctx *cli.Context) error {
 	var plugboard string
     effectivePlugboard := strings.Split(argv.Plugboard, " ")
 	for _, pair := range effectivePlugboard {
-		if matched, _ := regexp.MatchString(`^[A-Z]{2}$`, pair); !matched {
-			return fmt.Errorf(
-				`plugboard should be grouped by letter pairs ("AB CD"), got "%s"`,
-				ctx.Color().Yellow(pair))
-		}
+		// if matched, _ := regexp.MatchString(`^[A-Z]{2}$`, pair); !matched {
+			// return fmt.Errorf(
+				// `plugboard should be grouped by letter pairs ("AB CD"), got "%s"`,
+				// ctx.Color().Yellow(pair))
+		// }
 		if strings.ContainsAny(pair, plugboard) || pair[0] == pair[1] {
 			return fmt.Errorf(
 				`letters cannot repeat across the plugboard, check "%s"`,
